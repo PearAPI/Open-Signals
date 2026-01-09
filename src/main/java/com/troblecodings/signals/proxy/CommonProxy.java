@@ -30,6 +30,8 @@ import com.troblecodings.signals.init.OSBlocks;
 import com.troblecodings.signals.init.OSSounds;
 import com.troblecodings.signals.items.Placementtool;
 import com.troblecodings.signals.signalbridge.SignalBridgeBasicBlock;
+import com.troblecodings.signals.blocks.ComputerLink;
+import com.troblecodings.signals.guis.ContainerComputerLink;
 
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -55,6 +57,7 @@ public class CommonProxy {
         OpenSignalsMain.handler.addServer(PathwayRequester.class, ContainerPathwayRequester::new);
         OpenSignalsMain.handler.addServer(TrainNumberBlock.class, ContainerTrainNumber::new);
         OpenSignalsMain.handler.addServer(SignalBridgeBasicBlock.class, ContainerSignalBridge::new);
+        OpenSignalsMain.handler.addServer(ComputerLink.class, ContainerComputerLink::new);
     }
 
     public void init(final FMLInitializationEvent event) {

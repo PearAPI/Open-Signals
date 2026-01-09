@@ -56,6 +56,10 @@ public class SEProperty implements IIntegerable<String>, IUnlistedProperty<Strin
         return parent.getName(value);
     }
 
+    public List<String> getAllowedValues() {
+        return allowedValues;
+    }
+
     public Optional<String> readFromNBT(final NBTWrapper comp) {
         if (comp.contains(this.getName())) {
             final int id = comp.getInteger(this.getName());

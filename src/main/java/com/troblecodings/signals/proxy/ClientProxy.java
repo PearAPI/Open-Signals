@@ -5,12 +5,14 @@ import com.troblecodings.signals.blocks.PathwayRequester;
 import com.troblecodings.signals.blocks.RedstoneIO;
 import com.troblecodings.signals.blocks.Signal;
 import com.troblecodings.signals.blocks.SignalBox;
+import com.troblecodings.signals.blocks.ComputerLink;
 import com.troblecodings.signals.blocks.SignalController;
 import com.troblecodings.signals.blocks.TrainNumberBlock;
 import com.troblecodings.signals.guis.GuiPlacementtool;
 import com.troblecodings.signals.guis.GuiSignalBox;
 import com.troblecodings.signals.guis.GuiSignalController;
 import com.troblecodings.signals.guis.NamableGui;
+import com.troblecodings.signals.guis.GuiComputerLink;
 import com.troblecodings.signals.guis.GuiPathwayRequester;
 import com.troblecodings.signals.guis.GuiSignalBridge;
 import com.troblecodings.signals.guis.GuiTrainNumber;
@@ -46,6 +48,7 @@ public class ClientProxy extends CommonProxy {
         OpenSignalsMain.handler.addGui(PathwayRequester.class, GuiPathwayRequester::new);
         OpenSignalsMain.handler.addGui(TrainNumberBlock.class, GuiTrainNumber::new);
         OpenSignalsMain.handler.addGui(SignalBridgeBasicBlock.class, GuiSignalBridge::new);
+        OpenSignalsMain.handler.addGui(ComputerLink.class, GuiComputerLink::new);
 
         ModelLoaderRegistry.registerLoader(CustomModelLoader.INSTANCE);
         ClientRegistry.bindTileEntitySpecialRenderer(SignalTileEntity.class,
