@@ -11,13 +11,26 @@ import com.troblecodings.guilib.ecs.entitys.render.UITexture;
 import com.troblecodings.signals.tileentitys.ComputerLinkEntity;
 import com.troblecodings.signals.handler.ClientRenderUpdate;
 
+import net.minecraft.block.Block;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 
 import com.troblecodings.signals.OpenSignalsMain;
+import com.troblecodings.signals.blocks.RedstoneIO;
+import com.troblecodings.signals.blocks.RedstoneInput;
+import com.troblecodings.signals.blocks.Signal;
 import com.troblecodings.signals.enums.LinkType;
 
 public class GuiComputerLink extends GuiBase {
+
+    private static final ResourceLocation SIGNALS = new ResourceLocation(OpenSignalsMain.MODID,
+            "gui/textures/symbols.png");
+
+    private static final ResourceLocation REDSTONE_INPUT = new ResourceLocation(OpenSignalsMain.MODID,
+            "gui/textures/redstonein_off.png");
+
+    private static final ResourceLocation REDSTONE_OUTPUT = new ResourceLocation(OpenSignalsMain.MODID,
+            "gui/textures/redstoneout_off.png");
 
     public GuiComputerLink(GuiInfo info) {
         super(info);
@@ -34,15 +47,24 @@ public class GuiComputerLink extends GuiBase {
         final UIEntity list = new UIEntity();
         list.add(vbox);
         list.setInheritWidth(true);
-        list.setHeight(tile.getLinkedSignals().size() * 25);
+        list.setHeight(tile.getLinkedBlocks().size() * 25);
 
-        for (BlockPos pos : tile.getLinkedSignals()) {
+        for (BlockPos pos : tile.getLinkedBlocks()) {
+            Block block = tile.getWorld().getBlockState(pos).getBlock();
+
+            UITexture texture = new UITexture(SIGNALS, 0.2 * 0, 0.5, 0.2 * 0 + 0.2, 1);
+
+            if (block instanceof Signal)
+                texture = new UITexture(SIGNALS, 0.2 * 0, 0.5, 0.2 * 1, 1);
+            else if (block instanceof RedstoneInput)
+                texture = new UITexture(REDSTONE_INPUT, 0, 0, 1, 1);
+            else if (block instanceof RedstoneIO)
+                texture = new UITexture(REDSTONE_OUTPUT, 0, 0, 1, 1);
+
             final UIEntity row = new UIEntity();
             row.setHeight(20);
             row.setInheritWidth(true);
             row.add(new UIBox(UIBox.HBOX, 5));
-
-            final UITexture texture = new UITexture(UISignalBoxTile.ICON, 0.2 * 0, 0.5, 0.2 * 0 + 0.2, 1);
 
             UIEntity entity = new UIEntity();
             entity.add(texture);

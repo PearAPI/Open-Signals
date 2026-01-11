@@ -4,38 +4,31 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.troblecodings.signals.SEProperty;
+import com.troblecodings.signals.blocks.RedstoneIO;
 import com.troblecodings.signals.blocks.Signal;
 import com.troblecodings.signals.core.StateInfo;
 import com.troblecodings.signals.enums.ChangeableStage;
+import com.troblecodings.signals.handler.SignalBoxHandler;
 import com.troblecodings.signals.handler.SignalStateHandler;
 import com.troblecodings.signals.handler.SignalStateInfo;
 import com.troblecodings.signals.tileentitys.ComputerLinkEntity;
+import com.troblecodings.signals.tileentitys.RedstoneIOTileEntity;
 import com.troblecodings.signals.tileentitys.SignalTileEntity;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
     private Map<BlockPos, Map<String, SEProperty>> signalProperties = new HashMap<>();
 
     public ComputerLinkPeripheral(final ComputerLinkEntity entity) {
         super(entity);
-    }
-
-    List<SignalTileEntity> getLinkedSignals() {
-        List<SignalTileEntity> linkedSignals = new ArrayList<>();
-        entity.getSignals().forEach(pos -> {
-            TileEntity tileEntity = entity.getWorld().getTileEntity(pos);
-            if (tileEntity instanceof SignalTileEntity) {
-                linkedSignals.add((SignalTileEntity) tileEntity);
-            }
-        });
-        return linkedSignals;
     }
 
     TileEntity getTileEntity(BlockPos pos) {
@@ -46,9 +39,20 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
         return this.entity.getWorld().getBlockState(pos).getBlock();
     }
 
+    List<SignalTileEntity> getLinkedSignals() {
+        List<SignalTileEntity> linkedSignals = new ArrayList<>();
+        entity.getSignals().forEach(pos -> {
+            TileEntity tileEntity = getTileEntity(pos);
+            if (tileEntity instanceof SignalTileEntity) {
+                linkedSignals.add((SignalTileEntity) tileEntity);
+            }
+        });
+        return linkedSignals;
+    }
+
     void updateSignalProperties() {
         entity.getSignals().forEach(pos -> {
-            TileEntity tileEntity = entity.getWorld().getTileEntity(pos);
+            TileEntity tileEntity = getTileEntity(pos);
             if (tileEntity instanceof SignalTileEntity) {
                 Map<String, SEProperty> properties = new HashMap<>();
 
@@ -84,10 +88,30 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
         return getLinkedSignals().size() > 0;
     }
 
+    @LuaMethod
+    public final Object getBlocks() {
+        List<BlockPos> blocks = this.entity.getBlocks();
+        List<Object[]> obj = new ArrayList<>();
+
+        System.out.println("Blocks: " + blocks.size());
+        System.out.println("Signals: " + this.getLinkedSignals().size());
+        System.out.println("RedstoneInputs: " + this.entity.getRedstoneInputs().size());
+        System.out.println("RedstoneOutputs: " + this.entity.getRedstoneOutputs().size());
+
+        for (int i = 0; i < blocks.size(); i++) {
+            Object[] block = new Object[3];
+            block[0] = blocks.get(i).getX();
+            block[1] = blocks.get(i).getY();
+            block[2] = blocks.get(i).getZ();
+            obj.add(block);
+        }
+        return obj;
+    }
+
     /**
      * 
      * @return returns the linked signals as a table
-     *         e.g {{posX, posY, posZ}, ...}
+     *         e.g {{posX, posY, posZ, type}, ...}
      */
     @LuaMethod
     public final Object getSignals() {
@@ -106,13 +130,43 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
         return obj;
     }
 
+    @LuaMethod
+    public final Object getRedstoneInputs() {
+        List<BlockPos> redstoneInputs = this.entity.getRedstoneInputs();
+        List<Object[]> obj = new ArrayList<>();
+
+        for (int i = 0; i < redstoneInputs.size(); i++) {
+            Object[] signal = new Object[3];
+            signal[0] = redstoneInputs.get(i).getX();
+            signal[1] = redstoneInputs.get(i).getY();
+            signal[2] = redstoneInputs.get(i).getZ();
+            obj.add(signal);
+        }
+        return obj;
+    }
+
+    @LuaMethod
+    public final Object getRedstoneOutputs() {
+        List<BlockPos> redstoneOutputs = this.entity.getRedstoneOutputs();
+        List<Object[]> obj = new ArrayList<>();
+
+        for (int i = 0; i < redstoneOutputs.size(); i++) {
+            Object[] signal = new Object[3];
+            signal[0] = redstoneOutputs.get(i).getX();
+            signal[1] = redstoneOutputs.get(i).getY();
+            signal[2] = redstoneOutputs.get(i).getZ();
+            obj.add(signal);
+        }
+        return obj;
+    }
+
     /**
      * 
-     * @param args[0] index of the signal in the getSignals() table
-     * @return returns the supported signal states as a table
-     *         e.g {"signalState1", "signalState2", ...}
+     * @param index index of the signal in the getSignals() table
+     * @return returns the supported signal properties as a table
+     *         e.g {"signalProperty1", "signalProperty2", ...}
      */
-    @LuaMethod(arguments = { Object.class })
+    @LuaMethod
     public final Object getSupportedSignalStates(int index) {
         updateSignalProperties();
 
@@ -130,11 +184,12 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
 
     /**
      * 
-     * @param args[0] index of the signal in the getSignals() table
-     * @return returns the current signal state as a string
-     *         e.g "signalState1"
+     * @param index        index of the signal in the getSignals() table
+     * @param signalString signal property
+     * @return returns the current signal property as a string
+     *         e.g "signalProperty1"
      */
-    @LuaMethod(arguments = { int.class, String.class })
+    @LuaMethod
     public final Object getSignalState(int index, String signalString) {
         updateSignalProperties();
 
@@ -157,11 +212,12 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
 
     /**
      * 
-     * @param args[0] index of the signal in the getSignals() table
-     * @param args[1] signal state
+     * @param index        index of the signal in the getSignals() table
+     * @param signalString signal property
+     * @param signalState  signal state
      * @return returns true if the signal state was set
      */
-    @LuaMethod(arguments = { int.class, String.class, String.class })
+    @LuaMethod
     public final Object setSignalState(int index, String signalString, String signalState) {
         updateSignalProperties();
 
@@ -200,7 +256,14 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
         return true;
     }
 
-    @LuaMethod(arguments = { int.class, String.class })
+    /**
+     * 
+     * @param index        index of the signal in the getSignals() table
+     * @param signalString signal property
+     * @return returns the valid states for the signal property as a table
+     *         e.g {"state1", "state2", ...}
+     */
+    @LuaMethod
     public final Object getValidStates(int index, String signalString) {
         updateSignalProperties();
 
@@ -219,5 +282,23 @@ public class ComputerLinkPeripheral extends PeripheralBase<ComputerLinkEntity> {
             return "Invalid signal, signal was " + signalString;
 
         return property.getAllowedValues();
+    }
+
+    @LuaMethod
+    public final boolean setRedstoneOutput(int index, boolean state) {
+        BlockPos pos = entity.getRedstoneOutputs().get(index);
+        World world = entity.getWorld();
+
+        SignalBoxHandler.updateRedstoneOutput(new StateInfo(world, pos), state);
+
+        return true;
+    }
+
+    @LuaMethod
+    public final boolean getRedstoneInput(int index) {
+        BlockPos pos = entity.getRedstoneInputs().get(index);
+        IBlockState blockState = entity.getWorld().getBlockState(pos);
+
+        return blockState.getValue(RedstoneIO.POWER);
     }
 }
